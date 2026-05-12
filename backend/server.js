@@ -15,18 +15,21 @@ const adminRoutes = require('./routes/admin.routes');
 const studentRoutes = require('./routes/student.routes');
 const certificateRoutes = require('./routes/certificate.routes');
 
+// Import rate limiters
+const { authLimiter, searchLimiter } = require('./middleware/rateLimiter.middleware');
+
 // Initialize express app
 const app = express();
 
 // Middleware
-app.use(helmet()); // Security headers
+app.use(helmet());
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev')); // Logging
+app.use(morgan('dev'));
 
 // Create uploads directory if it doesn't exist
 const fs = require('fs');
@@ -43,9 +46,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 .then(() => console.log('✅ MongoDB Connected Successfully'))
 .catch((err) => {
   console.error('❌ MongoDB Connection Error:', err.message);
-  process.exit(1);
+  // removed process.exit(1) so server keeps running
 });
-
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
@@ -64,10 +66,8 @@ app.get('/api/health', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
-  
   res.status(statusCode).json({
     status: 'error',
     statusCode,
